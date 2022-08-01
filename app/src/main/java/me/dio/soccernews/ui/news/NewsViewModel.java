@@ -7,22 +7,44 @@ import androidx.lifecycle.ViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.dio.soccernews.data.remote.SoccerNewsApi;
 import me.dio.soccernews.domain.News;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class NewsViewModel extends ViewModel {
 
-    private final MutableLiveData<List<News>> news;
+    private final MutableLiveData<List<News>> news = new MutableLiveData<>();
+    private final SoccerNewsApi api;
 
     public NewsViewModel() {
-        news = new MutableLiveData<>();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://digitalinnovationone.github.io/soccer-news-api/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        api = retrofit.create(SoccerNewsApi.class);
+        this.findNews();
+    }
 
-        //TODO Remover Mock de Notícias
-        List<News> news = new ArrayList<>();
-        news.add(new News("Ferroviária Tem Desfalque Importante", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec luctus ex nec purus porta, ut aliquam odio porttitor. Integer vitae fermentum diam, in tincidunt velit. Integer dictum ut dui a tincidunt. Curabitur scelerisque vulputate ante vel eleifend. Nullam consectetur leo ac pellentesque varius."));
-        news.add(new News("Ferrinha Joga No sábado", "Quisque tellus diam, finibus in feugiat vitae, interdum et arcu. Cras at lectus eget est accumsan congue. Fusce malesuada odio eget lectus semper gravida. Curabitur pellentesque justo in massa vestibulum, scelerisque tempor felis fringilla. Pellentesque nec hendrerit nisi. Proin ligula tellus, gravida eu felis vulputate, semper semper nisi."));
-        news.add(new News("Copa do Mundo Feminina Está Terminando", "Cras sed massa cursus, efficitur libero nec, auctor augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Vivamus finibus rhoncus velit eget eleifend. Cras urna nisi, lacinia eu laoreet quis, consequat eget dui. Ut at odio non velit sodales molestie. Vestibulum non ullamcorper turpis."));
+    private void findNews() {
+        api.getNews().enqueue(new Callback<List<News>>() {
+            @Override
+            public void onResponse(Call<List<News>> call, Response<List<News>> response) {
+                if (response.isSuccessful()) {
+                    news.setValue(response.body());
+                } else {
+                    //TODO Pensar em uma estratégia de tratamento de erros.
+                }
+            }
 
-        this.news.setValue(news);
+            @Override
+            public void onFailure(Call<List<News>> call, Throwable t) {
+                //TODO Pensar em uma estratégia de tratamento de erros.
+            }
+        });
     }
 
     public LiveData<List<News>> getNews() {
